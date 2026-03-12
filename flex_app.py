@@ -11,26 +11,38 @@ metadata = list(adata.obs.columns)
 # UI
 app_ui = ui.page_fluid(
     ui.h2("scRNA-seq Explorer"),
-    ui.card(
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_selectize("umap_gene", "Select gene", genes, multiple=False),
-                ui.input_selectize("umap_meta", "Group by metadata", metadata, multiple=False),
-            ),
-            ui.output_plot("umap_meta"),
-            ui.output_plot("umap_gene"),
+    #row 1
+    ui.layout_columns(
+        
+        ui.card(
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.input_selectize("umap_meta_input", "Group by metadata", metadata, multiple=False),
+                ),
+                ui.output_plot("umap_meta"),
+            )
+        ),
+        ui.card(
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.input_selectize("umap_gene_input", "Select gene", genes, multiple=False) 
+                ),
+                ui.output_plot("umap_gene")
+            )
         )
     ),
+    #row 2
+    ui.layout_columns(
     ui.card(
         ui.layout_sidebar(
             ui.sidebar(
-            ui.input_selectize("dotplot_gene", "Select gene", genes, multiple=False),
-            ui.input_selectize("dotplot_meta", "Group by metadata", metadata, multiple=False)
-        ),
-        ui.output_image("dotplot"),  # dotplot displayed as image
-        #ui.output_plot("violin"),
+                ui.input_selectize("dotplot_meta_input", "Group by metadata", metadata, multiple=False),
+                ui.input_selectize("dotplot_gene_input", "Select gene", genes, multiple=True)
+            ),
+            ui.output_plot("dotplot"),
+        )
     )
-)
+    )
 )
 
 # Server
@@ -40,33 +52,38 @@ def server(input, output, session):
     @render.plot
     def umap_meta():
         fig, ax = plt.subplots()
-        sc.pl.umap(adata, color=input.umap_meta(), ax=ax, show=False)
+        sc.pl.umap(adata, color=input.umap_meta_input(), ax=ax, show=False)
         return fig
 
     @output
     @render.plot
     def umap_gene():
         fig, ax = plt.subplots()
-        sc.pl.umap(adata, color=input.umap_gene(), ax=ax, show=False)
+        sc.pl.umap(adata, color=input.umap_gene_input(), ax=ax, show=False)
         return fig
 
     @output
     @render.image
     def dotplot():
+
+        genes = list(input.dotplot_gene_input())  # convert tuple → list
+
+    # if nothing selected, don't try to plot
+        if len(genes) == 0:
+            return None
+
         tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
 
-    # 1. Create your own Matplotlib figure and axis
         fig, ax = plt.subplots(figsize=(6, 4))
-    
-    # 2. Draw the Scanpy dotplot on that axis
+
         sc.pl.dotplot(
             adata,
-            var_names=[input.dotplot_gene()],
-            groupby=input.dotplot_meta(),
+            var_names=genes,
+            groupby=input.dotplot_meta_input(),
             ax=ax,
-            show=False  # needed to draw without popping up
+            show=False
         )
-    # 3. Save the figure to disk
+
         fig.savefig(tmp.name, bbox_inches="tight")
         plt.close(fig)
 
