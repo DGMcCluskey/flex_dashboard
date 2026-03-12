@@ -1,3 +1,4 @@
+import shinyswatch
 import tempfile
 import matplotlib.pyplot as plt
 from shiny import App, ui, render
@@ -10,28 +11,30 @@ genes = list(adata.var_names)
 metadata = list(adata.obs.columns)
 metadata = [col for col in metadata if col in ["sample_id", "pool_id", "poms_id", 
 "celltypist_label_foetal_lung_celltypist", "leiden_res_1"]]
-
 # UI
 app_ui = ui.page_fluid(
     ui.h2("scRNA-seq Explorer"),
     #row 1
     ui.layout_columns(
         ui.card(
+        ui.card_header("UMAP by metadata"),
         ui.output_plot("umap_meta"),
         ui.input_checkbox_group("umap_meta_input", "Group by metadata", 
         choices=metadata, selected="sample_id")
     ),
 
     ui.card(
+        ui.card_header("Overlay gene expression"),
         ui.output_plot("umap_gene"),
         ui.input_selectize("umap_gene_input", "Select gene", genes, selected="PTPRC"),
         ui.output_text_verbatim("gene_summary")
     ),
-    col_widths=(8,4)
+    col_widths=(8,4),
 ),
     #row 2
     ui.layout_columns(
     ui.card(
+        ui.card_header("Detailed gene expression"),
         ui.layout_sidebar(
             ui.sidebar(
                 ui.input_checkbox_group("dotplot_meta_input", "Group by metadata", 
@@ -42,7 +45,8 @@ app_ui = ui.page_fluid(
             ui.output_plot("dotplot"),
         )
     )
-    )
+    ),
+    theme=shinyswatch.theme.solar
 )
 
 # Server
