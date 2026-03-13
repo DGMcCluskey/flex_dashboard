@@ -6,3 +6,4 @@ anndata
 nump
 scipy
 shinyswatch
+marsilea
